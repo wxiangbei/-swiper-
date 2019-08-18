@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body,ul{
+            margin: 0;
+        }
+        ul{
+            padding: 0;
+            list-style: none;
+
+        }
+        img{
+            display:block;
+        }
+        .phone{
+            position: relative;
+            display: flex;
+            align-items: center;
+            width:100vw;
+            height:100vh;
+        }
+        .swiper{
+            width: 100vw;
+            height: 60vh;
+            overflow: hidden;
+        }
+        ul{
+            display: flex;
+            /* width: 500vw; */
+            height: 60vh;
+            transform: translateZ(0);
+        }
+        li{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 60vh;
+            border-radius: 5vw;
+        }
+        li>img{
+            width: 80%;
+            height: 80%;
+            border-radius: 5vw;
+        }
+        .bglist{
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            filter: blur(10px);
+            top: 0;
+            left: 0;
+        }
+        .bglist img{
+            width: 100%;height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone">
+        <div class="swiper">
+            <div class="bglist">
+                   <img  alt="" src="./img/1.jpg">
+            </div>
+            <ul>
+                <li><img  alt="" src="./img/1.jpg"></li>
+                <li><img  alt="" src="./img/2.png"></li>
+                <li><img  alt="" src="./img/3.jpg"></li>
+                <li><img  alt="" src="./img/4.jpg"></li>
+                <li><img  alt="" src="./img/1.jpg"></li>
+            </ul>
+        </div>
+    </div>
+    <script>
+        /**
+            1.根据li个数给ul设置宽度
+                1.1 获取ul元素
+                1.2 获取li元素
+                1.3 根据li给ul设置宽度
+            2.实现ul触摸滑动
+                ul移动的距离=x2-x1(手指滑动的x位置-手指最开始触摸的x位置)
+                ul新位置=ul旧位置+ul元素移动的距离
+                2.1 获取手指触摸到ul时手指的位置x1,y1
+                2.2 获取手指触摸到ul时ul的位置
+                2.3 获取手指滑动的位置x2,y2
+                2.4 计算ul新位置=旧位置+x2-x1
+                2.5 给ul设置新位置
+            3.手指抬起ul元素反弹
+                3.1 当手指抬起时ul偏移量大于0时 ul偏移量设置为0;
+                3.2 当移动到最后一个li时(-(n-1)*w)不能移动
+                3.3 移动0.3w 取整 0-0.5回弹 0.5-1翻页
+        */
+        /**
+            事件绑定：obj.onclick=function(){};开辟n个空间添n个方法
+            事件监听：obj.parentNode.addEventListener('mousedown',function(){});开辟1个空间添1个方法
+            时间复杂度:绑定比监听要快
+            空间复杂度：监听比绑定要好
+            为了速度可以用绑定，为了性能可以用监听
+        */
+        const oUl = document.querySelector('ul');
+        const aLi = document.querySelectorAll('li');
+        const oSwiper = document.querySelector('.swiper');
+        oUl.style.width = aLi.length+'00vw';
+
+        oSwiper.addEventListener('touchstart',drag);
+        oSwiper.addEventListener('touchmove',drag);
+        oSwiper.addEventListener('touchend',drag);
+        let x1 = null;
+        let startX = null;
+        oUl.transform={};//存储ul偏移量
+        function drag(ev) { 
+            //高内聚
+            // console.log(ev) ev对象包含移动端属性
+            // console.log(ev.type) type包含touchstart,touchmove,touchend
+            switch(ev.type){
+                //事件分流思想 时间、空间比的单个函数都要低 但是更利于维护。
+                case 'touchstart':
+                // console.log('手指触摸事件')
+                oUl.style.transition = '0';
+                //2.1 获取手指触摸到ul时手指的位置x1,y1
+                x1 = ev.changedTouches[0].clientX;
+                //2.2 获取手指触摸到ul时ul的位置
+                startX = oUl.transform['translateX']||0;
+                // console.log(startX)
+                break;
+                case 'touchmove':
+                // console.log('手指滑动事件')
+                // 2.3 获取手指滑动的位置x2,y2
+                let x2 = ev.changedTouches[0].clientX;
+                // 2.4 计算ul新位置=旧位置+x2-x1
+                let nowX = startX+x2-x1;
+                // 2.5 给ul设置新位置
+                oUl.style.transform = 'translateX('+nowX+"px)";
+                //更新oUl.transform['translateX']
+                oUl.transform['translateX']=nowX;
+                break;
+                case 'touchend':
+                // console.log('手指抬起事件')
+                let offset = oUl.transform['translateX'];
+                // 3.1 当手指抬起时ul偏移量大于0时 ul偏移量设置为0;
+                    offset = Math.min(0,offset);
+                // 3.2 当移动到最后一个li时(-(n-1)*w)不能移动
+                    offset = Math.max(-(aLi.length-1)*aLi[0].offsetWidth,offset);
+                //    3.3 移动0.3w 取整 0-0.5回弹 0.5-1翻页
+                let num = Math.round(-offset/aLi[0].offsetWidth);
+                oUl.style.transition = '0.5s'
+                oUl.style.transform='translateX('+-num*aLi[0].offsetWidth+"px)";
+                oUl.transform['translateX']=-num*aLi[0].offsetWidth;
+                break;
+            }
+         }
+        
+    </script>
+</body>
+</html>
